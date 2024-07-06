@@ -16,8 +16,12 @@ def index():
 
 @app.route("/get", methods=["POST"])
 def chat():
+    global chat_history_ids
     msg = request.form["msg"]
-    return jsonify({"response": get_Chat_response(msg)})
+    response = get_Chat_response(msg)
+    print(f"Input: {msg}")
+    print(f"Response: {response}")
+    return jsonify({"response": response})
 
 def get_Chat_response(text):
     global chat_history_ids
@@ -36,7 +40,12 @@ def get_Chat_response(text):
     chat_history_ids = model.generate(bot_input_ids, max_length=1000, pad_token_id=tokenizer.eos_token_id)
 
     # decode and return the generated response
-    return tokenizer.decode(chat_history_ids[:, bot_input_ids.shape[-1]:][0], skip_special_tokens=True)
+    response = tokenizer.decode(chat_history_ids[:, bot_input_ids.shape[-1]:][0], skip_special_tokens=True)
+
+    # Update chat history with the current bot response
+    chat_history_ids = bot_input_ids
+    
+    return response
 
 if __name__ == '__main__':
     app.run(debug=True)
