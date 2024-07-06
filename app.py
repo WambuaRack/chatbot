@@ -15,7 +15,7 @@ def index():
     return render_template('chat.html')
 
 # Route for handling chat messages
-@app.route('/get', methods=["GET", "POST"])
+@app.route('/get', methods=["POST"])
 def chat():
     msg = request.form["msg"]
     response = get_chat_response(msg)
@@ -42,4 +42,4 @@ def get_chat_response(text):
     return tokenizer.decode(chat_history_ids[:, bot_input_ids.shape[-1]:][0], skip_special_tokens=True)
 
 if __name__ == '__main__':
-    app.run()
+    app.run(debug=True)
