@@ -1,45 +1,34 @@
-from flask import Flask, render_template, request, jsonify
-from transformers import AutoModelForCausalLM, AutoTokenizer
 import torch
+from transformers import GPT2LMHeadModel, GPT2Tokenizer
 
-# Load the model and tokenizer
-tokenizer = AutoTokenizer.from_pretrained("microsoft/DialoGPT-medium")
-model = AutoModelForCausalLM.from_pretrained("microsoft/DialoGPT-medium")
+# Initialize the model and tokenizer
+model_name = 'gpt2'  # You can change this to 'gpt2-medium', 'gpt2-large', etc., if needed
+model = GPT2LMHeadModel.from_pretrained(model_name)
+tokenizer = GPT2Tokenizer.from_pretrained(model_name)
 
-# Initialize the Flask app
-app = Flask(__name__)
+# Define the input context
+input_context = (
+    "The U.S. Department of Education has released a report on the federal government's efforts "
+    "to improve education for children. The report, titled \"The U.S. Education System's Efforts "
+    "to Improve Education for Children,\" is the first in a series of reports on the federal government's "
+    "efforts to improve education for children."
+)
 
-# Route for the main page
-@app.route("/")
-def index():
-    return render_template('chat.html')
+# Encode the input context
+input_ids = tokenizer.encode(input_context, return_tensors='pt')
 
-# Route for handling chat messages
-@app.route('/get', methods=["POST"])
-def chat():
-    msg = request.form["msg"]
-    response = get_chat_response(msg)
-    return jsonify({"response": response})
+# Generate output with adjusted parameters
+output = model.generate(
+    input_ids, 
+    max_length=150, 
+    num_return_sequences=1, 
+    no_repeat_ngram_size=2, 
+    temperature=0.7, 
+    top_p=0.9, 
+    top_k=50
+)
 
-def get_chat_response(text):    
-    # Encode the user input, add the eos_token, and return a tensor in PyTorch
-    new_user_input_ids = tokenizer.encode(str(text) + tokenizer.eos_token, return_tensors='pt')
+# Decode the generated tokens
+output_text = tokenizer.decode(output[0], skip_special_tokens=True)
 
-    # Initialize chat history if it doesn't exist
-    global chat_history_ids
-    try:
-        chat_history_ids
-    except NameError:
-        chat_history_ids = None
-
-    # Append the new user input tokens to the chat history
-    bot_input_ids = torch.cat([chat_history_ids, new_user_input_ids], dim=-1) if chat_history_ids is not None else new_user_input_ids
-
-    # Generate a response while limiting the total chat history to 1000 tokens
-    chat_history_ids = model.generate(bot_input_ids, max_length=1000, pad_token_id=tokenizer.eos_token_id)
-
-    # Return the last output tokens from the bot
-    return tokenizer.decode(chat_history_ids[:, bot_input_ids.shape[-1]:][0], skip_special_tokens=True)
-
-if __name__ == '__main__':
-    app.run(debug=True)
+print("Generated Response:", output_text)
