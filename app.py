@@ -2,9 +2,8 @@ from flask import Flask, render_template, request, jsonify
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import torch
 
-# Use a medical-specific model
-tokenizer = AutoTokenizer.from_pretrained("emilyalsentzer/Bio_ClinicalBERT")
-model = AutoModelForCausalLM.from_pretrained("emilyalsentzer/Bio_ClinicalBERT")
+tokenizer = AutoTokenizer.from_pretrained("microsoft/DialoGPT-medium")
+model = AutoModelForCausalLM.from_pretrained("microsoft/DialoGPT-medium")
 
 app = Flask(__name__)
 
@@ -19,12 +18,12 @@ def index():
 def chat():
     global chat_history_ids
     msg = request.form["msg"]
-    response = get_chat_response(msg)
+    response = get_Chat_response(msg)
     print(f"Input: {msg}")
     print(f"Response: {response}")
     return jsonify({"response": response})
 
-def get_chat_response(text):
+def get_Chat_response(text):
     global chat_history_ids
     
     # Initialize chat history if not already initialized
